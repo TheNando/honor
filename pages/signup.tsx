@@ -1,6 +1,9 @@
 import { css } from "@linaria/core";
 import { useState } from "react";
 
+import Button from "components/Button";
+import { findUser } from "util/user";
+
 const cardCss = css`
   background-color: var(--color-card-background);
   border-radius: var(--card-radius);
@@ -31,10 +34,15 @@ const formCss = css`
   display: flex;
   flex-direction: column;
 
+  .form-error,
   .form-hint {
     color: var(--color-text-help);
     font-size: var(--font-small);
     margin-top: var(--spacing-s);
+  }
+
+  .form-error {
+    color: var(--color-danger);
   }
 
   label {
@@ -54,89 +62,88 @@ const formCss = css`
     border-radius: var(--border-radius);
     color: var(--color-input);
     height: var(--height-input);
+    outline: none;
     padding-left: var(--spacing-s);
     padding-right: var(--spacing-s);
 
     &.invalid {
-      border-color: var(--color-nag);
+      border-color: var(--color-notification);
     }
   }
 `;
 
-const buttonCss = css`
-  background-color: transparent;
-  border: none;
-  color: var(--color-link);
-  cursor: pointer;
-  font-weight: var(--font-weight-bold);
-  line-height: 1;
-  border-radius: var(--border-radius);
-  height: var(--height-button);
-  margin-right: var(--spacing-m);
-  padding: var(--spacing-s) var(--spacing-m);
+const defaultInput = { error: "", isValid: false, value: "" };
 
-  &.button-primary {
-    background-color: var(--color-button-primary-bg);
-    color: var(--color-button-primary-text);
-  }
+const EMAIL_EXISTS_MSG =
+  "This email is already in use. Would you like to retrieve your token?";
 
-  &:disabled {
-    opacity: 0.3;
-  }
-`;
-
-Button.defaultProps = {
-  primary: false,
-  disabled: false,
-  onClick: null,
-};
-
-function Button({ children, primary, disabled, onClick }) {
-  return (
-    <button
-      className={buttonCss + (primary ? " button-primary" : "")}
-      disabled={disabled}
-    >
-      {children}
-    </button>
-  );
+interface InputState {
+  error: string;
+  isValid: boolean;
+  value: string;
 }
 
 export default function SignUp() {
-  const [form, setForm] = useState({ email: "", user: "" });
-  const [emailExists, setEmailExists] = useState(false);
-  const [invalid, setInvalid] = useState("emailtext");
+  const [email, setEmail] = useState<InputState>(defaultInput);
+  const [name, setName] = useState<InputState>(defaultInput);
+  const preventSubmit = [email, name].some(
+    (item) => !item.isValid || !item.value
+  );
 
-  const setEmail = (event) => {
-    validate(event);
-    setForm({ ...form, email: event.target.value });
+  const updateInput = (event: React.SyntheticEvent<HTMLInputElement>) => {
+    validateInput(event, false);
   };
 
-  const setUser = (event) => {
-    validate(event);
-    setForm({ ...form, user: event.target.value });
-  };
-
-  const reset = (event) => (event.currentTarget.classList = "");
-
-  const applyValidity = (event) => {
+  const validateInput = async (
+    event: React.SyntheticEvent<HTMLInputElement>,
+    fullValidation: boolean = true
+  ) => {
     const input = event.currentTarget;
-    input.classList = input.checkValidity() ? "" : "invalid";
+    const value = input.value;
+    const isValid = input.checkValidity();
+    const setter = input.type === "email" ? setEmail : setName;
+
+    let error = input.validationMessage;
+
+    if (!fullValidation) {
+      setter({ error: "", isValid, value });
+      return;
+    }
+
+    input.classList.value = isValid ? "" : "invalid";
+
+    // Don't check if user exists until all other validations addressed
+    if (!isValid) {
+      setter({ error, isValid, value });
+      return;
+    }
+
+    const key = input.type === "email" ? "email" : "name";
+    const exists = await findUser({ [key]: value });
+
+    if (!exists) {
+      setter({ error: "", isValid, value });
+      return;
+    }
+
+    input.classList.value = "invalid";
+
+    error =
+      input.type === "email"
+        ? EMAIL_EXISTS_MSG
+        : "Sorry. That name is unavailable";
+
+    setter({ error, isValid: false, value });
+  };
+
+  const reset = (event: React.SyntheticEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    input.classList.value = "";
 
     if (input.type === "email") {
-      // TODO: check if email exists
-      // If so, set email invalid and set emailExists
+      email.error && setEmail({ ...email, error: "" });
     } else {
-      // TODO: check if username exists
-    }
-  };
-
-  const validate = (event) => {
-    const input = event.currentTarget;
-    if (!input.checkValidity()) {
-      setInvalid(invalid + (invalid.includes(input.type) ? "" : input.type));
-    } else {
-      setInvalid(invalid.replace(input.type, ""));
+      name.error && setName({ ...name, error: "" });
     }
   };
 
@@ -149,31 +156,54 @@ export default function SignUp() {
         <input
           type="email"
           placeholder="user@email.com"
-          value={form.email}
-          onBlur={applyValidity}
-          onChange={setEmail}
+          value={email.value}
+          onBlur={validateInput}
+          onChange={updateInput}
           onFocus={reset}
           required
         />
-        <div className="form-hint">Your email stays private</div>
 
-        <label>Username</label>
-        <input
-          type="text"
-          value={form.user}
-          onBlur={applyValidity}
-          onChange={setUser}
-          onFocus={reset}
-          required
-        />
-        <div className="form-hint">Your public marketplace name</div>
+        {email.error ? (
+          <div className="form-error">{email.error}</div>
+        ) : (
+          <div className="form-hint">Your email stays private</div>
+        )}
+
+        {email.error !== EMAIL_EXISTS_MSG && (
+          <>
+            <label>Username</label>
+            <input
+              type="text"
+              value={name.value}
+              minLength={3}
+              onBlur={validateInput}
+              onChange={updateInput}
+              onFocus={reset}
+              required
+            />
+
+            {name.error ? (
+              <div className="form-error">{name.error}</div>
+            ) : (
+              <div className="form-hint">Your public marketplace name</div>
+            )}
+          </>
+        )}
 
         <div className="card-actions">
-          <Button primary disabled={invalid}>
-            Sign Up
-          </Button>
-
-          <Button disabled={!emailExists}>Retrieve Token</Button>
+          {email.error === EMAIL_EXISTS_MSG ? (
+            <Button primary onClick={() => console.log("clicked Retrieve")}>
+              Retrieve Token
+            </Button>
+          ) : (
+            <Button
+              primary
+              disabled={preventSubmit}
+              onClick={() => console.log("clicked Sign up")}
+            >
+              Sign up
+            </Button>
+          )}
         </div>
         <div className="form-hint">
           Honor caches a token for authentication.
