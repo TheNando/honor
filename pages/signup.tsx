@@ -1,76 +1,7 @@
-import { css } from "@linaria/core";
-import { useState } from "react";
+import Head from "aleph/framework/react/components/Head.ts";
+import React, { useState } from "react";
 
-import Button from "components/Button";
-import { findUser } from "util/user";
-
-const cardCss = css`
-  background-color: var(--color-card-background);
-  border-radius: var(--card-radius);
-  border: 1px solid var(--color-border);
-  margin: 0 auto 0;
-  transform: translateY(8rem);
-  width: 380px;
-
-  h1.card-title {
-    font-size: var(--font-title);
-    font-weight: var(--font-weight-light);
-    margin: var(--spacing-m) var(--spacing-l);
-  }
-
-  .card-body {
-    border-top: 1px solid var(--color-border);
-    margin-bottom: var(--spacing-l);
-    padding: var(--spacing-l);
-    padding-bottom: 0;
-  }
-
-  .card-actions {
-    margin-top: var(--spacing-l);
-  }
-`;
-
-const formCss = css`
-  display: flex;
-  flex-direction: column;
-
-  .form-error,
-  .form-hint {
-    color: var(--color-text-help);
-    font-size: var(--font-small);
-    margin-top: var(--spacing-s);
-  }
-
-  .form-error {
-    color: var(--color-danger);
-  }
-
-  label {
-    color: var(--color-input-label);
-    display: inline-block;
-    font-size: var(--font-small);
-  }
-
-  label:not(:first-child) {
-    margin-top: var(--spacing-l);
-  }
-
-  input {
-    background-color: var(--color-input-bg);
-    border: 1px solid;
-    border-color: var(--color-input-border);
-    border-radius: var(--border-radius);
-    color: var(--color-input);
-    height: var(--height-input);
-    outline: none;
-    padding-left: var(--spacing-s);
-    padding-right: var(--spacing-s);
-
-    &.invalid {
-      border-color: var(--color-notification);
-    }
-  }
-`;
+import { userExists } from "~/lib/users.ts";
 
 const defaultInput = { error: "", isValid: false, value: "" };
 
@@ -87,7 +18,7 @@ export default function SignUp() {
   const [email, setEmail] = useState<InputState>(defaultInput);
   const [name, setName] = useState<InputState>(defaultInput);
   const preventSubmit = [email, name].some(
-    (item) => !item.isValid || !item.value
+    (item) => !item.isValid || !item.value,
   );
 
   const updateInput = (event: React.SyntheticEvent<HTMLInputElement>) => {
@@ -96,7 +27,7 @@ export default function SignUp() {
 
   const validateInput = async (
     event: React.SyntheticEvent<HTMLInputElement>,
-    fullValidation: boolean = true
+    fullValidation = true,
   ) => {
     const input = event.currentTarget;
     const value = input.value;
@@ -110,8 +41,6 @@ export default function SignUp() {
       return;
     }
 
-    input.classList.value = isValid ? "" : "invalid";
-
     // Don't check if user exists until all other validations addressed
     if (!isValid) {
       setter({ error, isValid, value });
@@ -119,26 +48,22 @@ export default function SignUp() {
     }
 
     const key = input.type === "email" ? "email" : "name";
-    const exists = await findUser({ [key]: value });
+    const exists = await userExists({ [key]: value });
 
     if (!exists) {
       setter({ error: "", isValid, value });
       return;
     }
 
-    input.classList.value = "invalid";
-
-    error =
-      input.type === "email"
-        ? EMAIL_EXISTS_MSG
-        : "Sorry. That name is unavailable";
+    error = input.type === "email"
+      ? EMAIL_EXISTS_MSG
+      : "Sorry. That name is unavailable";
 
     setter({ error, isValid: false, value });
   };
 
   const reset = (event: React.SyntheticEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
-    input.classList.value = "";
 
     if (input.type === "email") {
       email.error && setEmail({ ...email, error: "" });
@@ -147,79 +72,93 @@ export default function SignUp() {
     }
   };
 
+  const emailDanger = email.error ? " is-danger" : "";
+  const nameDanger = name.error ? " is-danger" : "";
+
   return (
-    <section className={cardCss}>
-      <h1 className="card-title">Create an account</h1>
+    <section
+      className="section hero is-primary is-fullheight"
+    >
+      <Head>
+        <title>Honor - Sign Up</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
 
-      <div className={"card-body " + formCss}>
-        <label>Email</label>
-        <input
-          type="email"
-          placeholder="user@email.com"
-          value={email.value}
-          onBlur={validateInput}
-          onChange={updateInput}
-          onFocus={reset}
-          required
-        />
+      <main className="hero-body container columns is-centered">
+        <div className="column is-5">
+          <h1 className="title">Create an account</h1>
 
-        {email.error ? (
-          <div className="form-error">{email.error}</div>
-        ) : (
-          <div className="form-hint">Your email stays private</div>
-        )}
+          <form action="" className="box">
+            <div className="field">
+              <label className="label">Email</label>
 
-        {email.error !== EMAIL_EXISTS_MSG && (
-          <>
-            <label>Username</label>
-            <input
-              type="text"
-              value={name.value}
-              minLength={3}
-              onBlur={validateInput}
-              onChange={updateInput}
-              onFocus={reset}
-              required
-            />
+              <div className="control">
+                <input
+                  type="email"
+                  className={"input" + emailDanger}
+                  placeholder="user@email.com"
+                  value={email.value}
+                  onBlur={validateInput}
+                  onChange={updateInput}
+                  onFocus={reset}
+                  required
+                />
+              </div>
 
-            {name.error ? (
-              <div className="form-error">{name.error}</div>
-            ) : (
-              <div className="form-hint">Your public marketplace name</div>
+              <p className={"help" + emailDanger}>
+                {email.error || "Your email stays private"}
+              </p>
+            </div>
+
+            {email.error !== EMAIL_EXISTS_MSG && (
+              <div className="field">
+                <label className="label">Username</label>
+
+                <div className="control">
+                  <input
+                    type="text"
+                    className={"input" + nameDanger}
+                    value={name.value}
+                    minLength={3}
+                    onBlur={validateInput}
+                    onChange={updateInput}
+                    onFocus={reset}
+                    required
+                  />
+                </div>
+
+                <p className={"help" + nameDanger}>
+                  {name.error || "Your public marketplace name"}
+                </p>
+              </div>
             )}
-          </>
-        )}
 
-        <div className="card-actions">
-          {email.error === EMAIL_EXISTS_MSG ? (
-            <Button primary onClick={() => console.log("clicked Retrieve")}>
-              Retrieve Token
-            </Button>
-          ) : (
-            <Button
-              primary
-              disabled={preventSubmit}
-              onClick={() => console.log("clicked Sign up")}
-            >
-              Sign up
-            </Button>
-          )}
+            <div className="field is-expanded">
+              {email.error === EMAIL_EXISTS_MSG
+                ? (
+                  <button
+                    className="button is-success is-fullwidth"
+                    onClick={() => console.log("clicked Retrieve")}
+                  >
+                    Retrieve Token
+                  </button>
+                )
+                : (
+                  <button
+                    className="button is-success is-fullwidth"
+                    disabled={preventSubmit}
+                    onClick={() => console.log("clicked Sign up")}
+                  >
+                    Sign up
+                  </button>
+                )}
+            </div>
+            <div className="form-hint">
+              Honor caches a token for authentication.
+            </div>
+          </form>
         </div>
-        <div className="form-hint">
-          Honor caches a token for authentication.
-        </div>
-      </div>
+      </main>
     </section>
   );
-}
-
-export async function getServerSideProps() {
-  /* TODO: Get number of items listed */
-  // const { client } = await connectToDatabase();
-  // const isConnected = await client.isConnected();
-  // const { db } = await connectToDatabase();
-  // const users = await db.collection("listings").toArray();
-  return {
-    props: {},
-  };
 }

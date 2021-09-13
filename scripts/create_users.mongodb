@@ -12,7 +12,7 @@ db.users.drop();
 
 // Insert a few documents into the sales collection.
 db.users.insertMany([
-  { '_id': 1, 'name': 'nando', 'role': 'admin', 'email': 'npena@email.com' },
+  { '_id': 1, 'name': 'nando', 'role': 'admin', 'email': 'nando@email.com' },
   { '_id': 2, 'name': 'test', 'role': 'user', 'email': 'user@email.com' },
 ]);
 
