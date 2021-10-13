@@ -1,12 +1,12 @@
 {
   "imports": {
-    "aleph/": "https://deno.land/x/aleph@v0.3.0-beta.12/",
-    "aleph/react": "https://deno.land/x/aleph@v0.3.0-beta.12/framework/react/mod.ts",
-    "aleph/types": "https://deno.land/x/aleph@v0.3.0-beta.12/types.ts",
-    "aleph/web": "https://deno.land/x/aleph@v0.3.0-beta.12/framework/core/mod.ts",
+    "aleph/": "https://deno.land/x/aleph@v0.3.0-beta.19/",
+    "aleph/react": "https://deno.land/x/aleph@v0.3.0-beta.19/framework/react/mod.ts",
+    "aleph/types": "https://deno.land/x/aleph@v0.3.0-beta.19/types.ts",
+    "aleph/web": "https://deno.land/x/aleph@v0.3.0-beta.19/framework/core/mod.ts",
     "dotenv": "https://deno.land/x/dotenv@v3.0.0/mod.ts",
-    "framework": "https://deno.land/x/aleph@v0.3.0-beta.12/framework/core/mod.ts",
-    "framework/react": "https://deno.land/x/aleph@v0.3.0-beta.12/framework/react/mod.ts",
+    "framework": "https://deno.land/x/aleph@v0.3.0-beta.19/framework/core/mod.ts",
+    "framework/react": "https://deno.land/x/aleph@v0.3.0-beta.19/framework/react/mod.ts",
     "monogo": "https://deno.land/x/mongo@v0.23.1/mod.ts",
     "react-dom": "https://esm.sh/react-dom@17.0.2",
     "react": "https://esm.sh/react@17.0.2",
